@@ -11,7 +11,59 @@
 <body>
   <main>
     <h1>Vanilla JavaScript App</h1>
+    <div id="api-result">Loading...</div>
+    <div id="sse-api-default">Waiting for SSE default event message...</div>
+    <div id="sse-api-time-update">Waiting for SSE time-update event messages...</div>
   </main>
+  <script>
+    // API のエンドポイント
+    const apiUrl = 'https://5879webapp-adfnekemeuccghff.japaneast-01.azurewebsites.net/httpstatus/200';
+
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        // 取得したデータを表示
+        document.getElementById('api-result').textContent = 'API Response: ' + JSON.stringify(data, null, 2);
+      })
+      .catch(error => {
+        document.getElementById('api-result').textContent = 'Error: ' + error.message;
+      });
+
+    // SSE (Server-Sent Events) のエンドポイントアクセス
+    const sseApiUrl = 'https://5879webapp-adfnekemeuccghff.japaneast-01.azurewebsites.net/stream/sse/300';
+
+    const sseApiDefaultResult = document.getElementById('sse-api-default');
+    sseApiDefaultResult.textContent = 'Waiting for SSE default event message...';
+
+    const sseApiTimeUpdateResult = document.getElementById('sse-api-time-update');
+    sseApiTimeUpdateResult.textContent = 'Waiting for SSE time-update event messages...';
+
+    const eventSource = new EventSource(sseApiUrl);
+
+    eventSource.onopen = function () {
+      console.log('SSE connection opened');
+    };
+
+    eventSource.onmessage = function (event) {
+      console.log('SSE message event:', event);
+      sseApiDefaultResult.textContent = 'SSE message event: ' + event.data;
+    };
+
+
+    eventSource.addEventListener('time-update', function (event) {
+      console.log('time-update event:', event);
+      sseApiTimeUpdateResult.textContent = 'time-update event: ' + event.data;
+    });
+
+    eventSource.onerror = function (error) {
+      sseApiDefaultResult.textContent = 'SSE connection error: ' + error.message;
+      eventSource.close();
+    };
+
+  </script>
 </body>
 
 </html>
